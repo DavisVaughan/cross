@@ -11,11 +11,10 @@
 #' pull request installed.
 #'
 #' @details
-#' The packages installed by `pkgs` and `branches` are placed in temporary
-#' directories that act as an extra library path. The temporary directory is
-#' prepended to `libpath`, which is then passed along to [callr::r()] as the
-#' `libpath` argument there. This ensures that your personal package libraries
-#' remain untouched.
+#' The installed packages are placed in temporary directories that act as an
+#' extra library path. The temporary directory is prepended to `libpath`, which
+#' is then passed along to [callr::r()] as the `libpath` argument there. This
+#' ensures that your personal package libraries remain untouched.
 #'
 #' @section Global options:
 #'
@@ -54,29 +53,9 @@
 #'   A character vector of package names or remote package specifications to
 #'   install and run `fn` against. Passed along to [pak::pkg_install()].
 #'
-#' @param branches `[character]`
-#'
-#'   A character vector of git branch names to check out, install, and run `fn`
-#'   against.
-#'
-#'   It is expected that your working directory is set to the git directory
-#'   of the package you want to install different branches of. This is typically
-#'   the case whenever you open an RStudio project for the package in question.
-#'   Technically, the path is determined by [usethis::proj_get()].
-#'
-#'   Your git tree must be completely clean to use `branches`. If there are any
-#'   uncommitted changes, an error will be thrown because `run()` must swap
-#'   between the branches to install the package, potentially resulting in a
-#'   loss of information. Note that untracked files are not included in this
-#'   check - they should never be lost when the branch is changed, but they
-#'   could affect the results.
-#'
-#'   After the last branch is installed, the original branch is checked out.
-#'
 #' @param libpath `[character]`
 #'
-#'   The base library path to use. The temporary library path that `pkgs` and
-#'   `branches` is installed into will be prepended to this list.
+#'   The base library path to use.
 #'
 #' @param args_pak `[named list]`
 #'
@@ -98,7 +77,7 @@
 #'
 #' @returns
 #' A data frame with two columns:
-#' - `source`, a character vector of `c(pkgs, branches)`.
+#' - `pkg`, a character vector containing `pkgs`.
 #' - `result`, a list column containing the result of calling `fn` for that
 #'   version of the package.
 #'
@@ -110,94 +89,38 @@
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
-#'
-#' # Similar to above, but this runs it across 2 different local branches.
-#' # To run this:
-#' # - The working directory is set to the RStudio project for vctrs
-#' # - There must be a branch called `fix/performance-bug`
-#' # - There can't be any uncommitted git changes
-#' run(branches = c("main", "fix/performance-bug"), ~{
-#'   library(vctrs)
-#'   x <- c(TRUE, FALSE, NA, TRUE)
-#'   bench::mark(vec_detect_missing(x))
-#' })
 run <- function(fn,
+                pkgs,
                 ...,
                 args = list(),
-                pkgs = character(),
-                branches = character(),
                 libpath = .libPaths(),
                 args_pak = list(),
                 args_callr = list()) {
-  # Force callr to be loaded before pak to avoid S3 method overwriting message
-  # https://github.com/r-lib/callr/issues/254
-  dummy <- callr::r
+  load_callr()
 
   check_dots_empty0(...)
 
-  fn <- as_function(fn)
-
-  vec_check_list(args)
   check_character(pkgs)
-  check_character(branches)
   check_character(libpath)
   vec_check_list(args_pak)
-  vec_check_list(args_callr)
+  check_named2(args_pak)
 
-  if (!is_named2(args_pak)) {
-    cli::cli_abort("{.arg args_pak} must be fully named.")
-  }
-  if (!is_named2(args_callr)) {
-    cli::cli_abort("{.arg args_callr} must be fully named.")
-  }
+  n <- length(pkgs)
+  libs <- local_libdirs(n)
+  install_pkgs(pkgs, libs, args_pak)
 
-  n <- 0L
-  sources <- character()
-  libs <- character()
+  libpaths <- lapply(libs, function(lib) {
+    c(lib, libpath)
+  })
 
-  n_pkgs <- length(pkgs)
-  if (n_pkgs > 0L) {
-    libs_pkgs <- local_libdirs(n_pkgs)
-    install_pkgs(pkgs, libs_pkgs, args_pak)
-
-    n <- n + n_pkgs
-    sources <- c(sources, pkgs)
-    libs <- c(libs, libs_pkgs)
-  }
-
-  n_branches <- length(branches)
-  if (n_branches > 0L) {
-    libs_branches <- local_libdirs(n_branches)
-    install_branches(branches, libs_branches, args_pak)
-
-    n <- n + n_branches
-    sources <- c(sources, branches)
-    libs <- c(libs, libs_branches)
-  }
-
-  results <- vector("list", length = n)
-  ui_done("Running {usethis::ui_code('fn')} across variants")
-
-  args <- list(
-    func = fn,
-    args = args
+  results <- run_libpaths(
+    fn = fn,
+    args = args,
+    libpaths = libpaths,
+    args_callr = args_callr
   )
-  args_callr[names(args)] <- args
 
-  for (i in seq_len(n)) {
-    args_callr[["libpath"]] <- c(libs[[i]], libpath)
-
-    elt <- inject(callr::r(!!!args_callr))
-
-    if (is.null(elt)) {
-      # Avoid `results[[i]] <- NULL` shortening the result
-      next
-    }
-
-    results[[i]] <- elt
-  }
-
-  out <- list(source = sources, result = results)
+  out <- list(pkg = pkgs, result = results)
   out <- tibble::new_tibble(out, nrow = n)
 
   out
@@ -223,12 +146,80 @@ install_pkgs <- function(pkgs, libs, args_pak) {
   }
 }
 
-install_branches <- function(branches,
-                             libs,
-                             args_pak,
-                             ...,
-                             error_call = caller_env()) {
+# ------------------------------------------------------------------------------
+
+#' Evaluate a function across different local package branches
+#'
+#' @description
+#' `run_branches()` is similar to [run()], except it allows you to run `fn`
+#' across different local branches corresponding to the same package, rather
+#' than different CRAN or GitHub versions of that package.
+#'
+#' The default behavior runs the current branch against the `main` branch.
+#'
+#' @inheritSection run Global options
+#'
+#' @inheritParams run
+#'
+#' @param current `[TRUE / FALSE]`
+#'
+#'   Should the current git branch be included in the vector of `branches`?
+#'
+#' @param branches `[character]`
+#'
+#'   A character vector of git branch names to check out, install, and run `fn`
+#'   against.
+#'
+#'   It is expected that your working directory is set to the git directory
+#'   of the package you want to install different branches of. This is typically
+#'   the case whenever you open an RStudio project for the package in question.
+#'   Technically, the path is determined by [usethis::proj_get()].
+#'
+#'   Your git tree must be completely clean to use `branches`. If there are any
+#'   uncommitted changes, an error will be thrown because `run()` must swap
+#'   between the branches to install the package, potentially resulting in a
+#'   loss of information. Note that untracked files are not included in this
+#'   check - they should never be lost when the branch is changed, but they
+#'   could affect the results.
+#'
+#'   After the last branch is installed, the original branch is checked out.
+#'
+#' @returns
+#' A data frame with two columns:
+#' - `branch`, a character vector containing `branches`.
+#' - `result`, a list column containing the result of calling `fn` for that
+#'   branch of the package.
+#'
+#' @export
+#' @examplesIf FALSE
+#' # Similar to `run()`, but this runs the function across 2 local branches.
+#' # To run this:
+#' # - The working directory is set to the RStudio project for vctrs
+#' # - There can't be any uncommitted git changes
+#' # - You are currently on a branch, say `fix/performance-bug`
+#' # - You'd like to run that branch against `main`
+#' run_branches(~{
+#'   library(vctrs)
+#'   x <- c(TRUE, FALSE, NA, TRUE)
+#'   bench::mark(vec_detect_missing(x))
+#' })
+run_branches <- function(fn,
+                         ...,
+                         args = list(),
+                         current = TRUE,
+                         branches = "main",
+                         libpath = .libPaths(),
+                         args_pak = list(),
+                         args_callr = list()) {
+  load_callr()
+
   check_dots_empty0(...)
+
+  check_bool(current)
+  check_character(branches)
+  check_character(libpath)
+  vec_check_list(args_pak)
+  check_named2(args_pak)
 
   path <- with_usethis_quiet({
     usethis::proj_get()
@@ -239,7 +230,7 @@ install_branches <- function(branches,
       "Must be within a package to install a branch.",
       i = "{.fn usethis::proj_get} reported the project path as {path}."
     )
-    cli::cli_abort(message, call = error_call)
+    cli::cli_abort(message)
   }
 
   if (!uses_git(path)) {
@@ -247,7 +238,7 @@ install_branches <- function(branches,
       "The package must use git to install a branch.",
       i = "{.fn usethis::proj_get} reported the project path as {path}."
     )
-    cli::cli_abort(message, call = error_call)
+    cli::cli_abort(message)
   }
 
   if (git_has_changes(path)) {
@@ -255,24 +246,54 @@ install_branches <- function(branches,
       "Can't use {.arg branches} when there are uncommited changes between the working directory and the git index.",
       i = "Commit your changes first!"
     )
-    cli::cli_abort(message, call = error_call)
+    cli::cli_abort(message)
   }
 
-  original_branch <- gert::git_branch(repo = path)
-  withr::defer(gert::git_branch_checkout(original_branch, repo = path))
+  original <- gert::git_branch(path)
+
+  if (current) {
+    branches <- c(original, branches)
+  }
+
+  n <- length(branches)
+  libs <- local_libdirs(n)
+
+  install_branches(
+    branches = branches,
+    libs = libs,
+    original = original,
+    path = path,
+    args_pak = args_pak
+  )
+
+  libpaths <- lapply(libs, function(lib) {
+    c(lib, libpath)
+  })
+
+  results <- run_libpaths(
+    fn = fn,
+    args = args,
+    libpaths = libpaths,
+    args_callr = args_callr
+  )
+
+  out <- list(branch = branches, result = results)
+  out <- tibble::new_tibble(out, nrow = n)
+
+  out
+}
+
+install_branches <- function(branches, libs, original, path, args_pak) {
+  withr::defer(gert::git_branch_checkout(original, repo = path))
 
   for (i in seq_along(branches)) {
     branch <- branches[[i]]
 
     gert::git_branch_checkout(branch, repo = path)
 
-    args <- list(
-      pkg = path,
-      lib = libs[[i]],
-      ask = FALSE
-    )
-
-    args_pak[names(args)] <- args
+    args_pak[["pkg"]] <- path
+    args_pak[["lib"]] <- libs[[i]]
+    args_pak[["ask"]] <- FALSE
 
     ui_done("Installing branch {usethis::ui_value(branch)}")
 
@@ -280,30 +301,6 @@ install_branches <- function(branches,
       inject(pak::pkg_install(!!!args_pak))
     })
   }
-}
-
-local_libdirs <- function(n, frame = caller_env()) {
-  out <- vector("character", length = n)
-
-  for (i in seq_len(n)) {
-    out[[i]] <- withr::local_tempdir(.local_envir = frame)
-  }
-
-  out
-}
-
-pak_suppress <- function(expr) {
-  if (option_pak_quiet()) {
-    without_callr_messages(expr)
-  } else {
-    expr
-  }
-}
-option_pak_quiet <- function() {
-  is_true(getOption("cross.pak_quiet", default = TRUE))
-}
-without_callr_messages <- function(expr) {
-  suppressMessages(expr, classes = "callr_message")
 }
 
 is_package <- function(path) {
@@ -343,6 +340,73 @@ with_usethis_quiet <- function(expr) {
   expr
 }
 
+# ------------------------------------------------------------------------------
+
+run_libpaths <- function(fn,
+                         ...,
+                         args = list(),
+                         libpaths = list(),
+                         args_callr = list(),
+                         error_call = caller_env()) {
+  check_dots_empty0(...)
+
+  fn <- as_function(fn, call = error_call)
+
+  vec_check_list(args, call = error_call)
+  vec_check_list(libpaths, call = error_call)
+  vec_check_list(args_callr, call = error_call)
+  check_named2(args_callr, call = error_call)
+
+  args_callr[["func"]] <- fn
+  args_callr[["args"]] <- args
+
+  n <- length(libpaths)
+  out <- vector("list", length = n)
+
+  ui_done("Running {usethis::ui_code('fn')} across variants")
+
+  for (i in seq_len(n)) {
+    args_callr[["libpath"]] <- libpaths[[i]]
+
+    elt <- inject(callr::r(!!!args_callr))
+
+    if (is.null(elt)) {
+      # Avoid `out[[i]] <- NULL` shortening the result
+      next
+    }
+
+    out[[i]] <- elt
+  }
+
+  out
+}
+
+# ------------------------------------------------------------------------------
+
+local_libdirs <- function(n, frame = caller_env()) {
+  out <- vector("character", length = n)
+
+  for (i in seq_len(n)) {
+    out[[i]] <- withr::local_tempdir(.local_envir = frame)
+  }
+
+  out
+}
+
+pak_suppress <- function(expr) {
+  if (option_pak_quiet()) {
+    without_callr_messages(expr)
+  } else {
+    expr
+  }
+}
+option_pak_quiet <- function() {
+  is_true(getOption("cross.pak_quiet", default = TRUE))
+}
+without_callr_messages <- function(expr) {
+  suppressMessages(expr, classes = "callr_message")
+}
+
 ui_done <- function(x, frame = caller_env()) {
   if (!option_quiet()) {
     usethis::ui_done(x, .envir = frame)
@@ -351,4 +415,18 @@ ui_done <- function(x, frame = caller_env()) {
 }
 option_quiet <- function() {
   is_true(getOption("cross.quiet", default = !rlang::is_interactive()))
+}
+
+load_callr <- function() {
+  # Force callr to be loaded before pak to avoid S3 method overwriting message
+  # https://github.com/r-lib/callr/issues/254
+  dummy <- callr::r
+  invisible()
+}
+
+check_named2 <- function(x, ..., arg = caller_arg(x), call = caller_env()) {
+  if (is_named2(x)) {
+    return(invisible(NULL))
+  }
+  cli::cli_abort("{.arg {arg}} must be fully named.", call = call)
 }
