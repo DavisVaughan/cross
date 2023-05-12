@@ -1,4 +1,122 @@
+#' Evaluate a function across different package versions
+#'
+#' @description
+#' `run()` allows you to run a single function, `fn`, multiple times in separate
+#' R sessions, where each R sessions has different versions of packages
+#' installed. A typical use case is running a before/after benchmark, comparing
+#' the CRAN version of a package with a development version of the same package.
+#'
+#' For example, `run(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would run `fn`
+#' in 2 separate R sessions, one with CRAN vctrs installed, and one with the
+#' pull request installed.
+#'
+#' @details
+#' The packages installed by `pkgs` and `branches` are placed in temporary
+#' directories that act as an extra library path. The temporary directory is
+#' prepended to `libpath`, which is then passed along to [callr::r()] as the
+#' `libpath` argument there. This ensures that your personal package libraries
+#' remain untouched.
+#'
+#' @section Global options:
+#'
+#' - `cross.quiet`: `[TRUE / FALSE]`
+#'
+#'   Should cross specific messages about the process be shown?
+#'
+#'   Defaults to `!rlang::is_interactive()` if not set, so messages are only
+#'   shown when running interactively.
+#'
+#' - `cross.pak_quiet`: `[TRUE / FALSE]`
+#'
+#'   Should pak installation messages be shown?
+#'
+#'   Defaults to `TRUE` if not set.
+#'
+#' @inheritParams rlang::args_dots_empty
+#'
+#' @param fn `[function]`
+#'
+#'   A function to evaluate. The function is passed along to [callr::r()], so
+#'   it is evaluated in a fresh R session and must be self-contained. Typically
+#'   the function will not have any arguments.
+#'
+#'   Read the `func` docs of [callr::r()] for the full set of restrictions on
+#'   `fn`.
+#'
+#'   `fn` is converted to a function with [rlang::as_function()], so it can be
+#'   a lambda function.
+#'
+#' @param pkgs `[character]`
+#'
+#'   A character vector of package names or remote package specifications to
+#'   install and run `fn` against. Passed along to [pak::pkg_install()].
+#'
+#' @param branches `[character]`
+#'
+#'   A character vector of git branch names to check out, install, and run `fn`
+#'   against.
+#'
+#'   It is expected that your working directory is set to the git directory
+#'   of the package you want to install different branches of. This is typically
+#'   the case whenever you open an RStudio project for the package in question.
+#'   Technically, the path is determined by [usethis::proj_get()].
+#'
+#'   Your git tree must be completely clean to use `branches`. If there are any
+#'   uncommitted changes, an error will be thrown because `run()` must swap
+#'   between the branches to install the package, potentially resulting in a
+#'   loss of information. Note that untracked files are not included in this
+#'   check - they should never be lost when the branch is changed, but they
+#'   could affect the results.
+#'
+#'   After the last branch is installed, the original branch is checked out.
+#'
+#' @param libpath `[character]`
+#'
+#'   The base library path to use. The temporary library path that `pkgs` and
+#'   `branches` is installed into will be prepended to this list.
+#'
+#' @param args_pak `[named list]`
+#'
+#'   A named list of arguments to pass on to [pak::pkg_install()].
+#'
+#'   Can't include:
+#'   - `pkg`
+#'   - `lib`
+#'   - `ask`
+#'
+#' @param args_callr `[named list]`
+#'
+#'   A named list of arguments to pass on to [callr::r()].
+#'
+#'   Can't include:
+#'   - `func`
+#'   - `libpath`
+#'
+#' @returns
+#' A data frame with two columns:
+#' - `source`, a character vector of `c(pkgs, branches)`.
+#' - `result`, a list column containing the result of calling `fn` for that
+#'   version of the package.
+#'
 #' @export
+#' @examplesIf FALSE
+#' # Run a benchmark across 2 different versions of vctrs
+#' run(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#'   library(vctrs)
+#'   x <- c(TRUE, FALSE, NA, TRUE)
+#'   bench::mark(vec_detect_missing(x))
+#' })
+#'
+#' # Similar to above, but this runs it across 2 different local branches.
+#' # To run this:
+#' # - The working directory is set to the RStudio project for vctrs
+#' # - There must be a branch called `fix/performance-bug`
+#' # - There can't be any uncommitted git changes
+#' run(branches = c("main", "fix/performance-bug"), ~{
+#'   library(vctrs)
+#'   x <- c(TRUE, FALSE, NA, TRUE)
+#'   bench::mark(vec_detect_missing(x))
+#' })
 run <- function(fn,
                 ...,
                 pkgs = character(),
@@ -19,6 +137,13 @@ run <- function(fn,
   check_character(libpath)
   vec_check_list(args_pak)
   vec_check_list(args_callr)
+
+  if (!is_named2(args_pak)) {
+    cli::cli_abort("{.arg args_pak} must be fully named.")
+  }
+  if (!is_named2(args_callr)) {
+    cli::cli_abort("{.arg args_callr} must be fully named.")
+  }
 
   n <- 0L
   sources <- character()
@@ -45,6 +170,7 @@ run <- function(fn,
   }
 
   results <- vector("list", length = n)
+  ui_done("Running {usethis::ui_code('fn')} across variants")
 
   for (i in seq_len(n)) {
     args <- list(
@@ -71,13 +197,17 @@ run <- function(fn,
 
 install_pkgs <- function(pkgs, libs, args_pak) {
   for (i in seq_along(pkgs)) {
+    pkg <- pkgs[[i]]
+
     args <- list(
-      pkg = pkgs[[i]],
+      pkg = pkg,
       lib = libs[[i]],
       ask = FALSE
     )
 
     args_pak[names(args)] <- args
+
+    ui_done("Installing package {usethis::ui_value(pkg)}")
 
     pak_suppress({
       inject(pak::pkg_install(!!!args_pak))
@@ -114,7 +244,7 @@ install_branches <- function(branches,
 
   if (git_has_changes(path)) {
     message <- c(
-      "Can't have any changes between the working directory and the git index when using {.arg branches}.",
+      "Can't use {.arg branches} when there are uncommited changes between the working directory and the git index.",
       i = "Commit your changes first!"
     )
     cli::cli_abort(message, call = error_call)
@@ -136,6 +266,8 @@ install_branches <- function(branches,
 
     args_pak[names(args)] <- args
 
+    ui_done("Installing branch {usethis::ui_value(branch)}")
+
     pak_suppress({
       inject(pak::pkg_install(!!!args_pak))
     })
@@ -153,17 +285,15 @@ local_libdirs <- function(n, frame = caller_env()) {
 }
 
 pak_suppress <- function(expr) {
-  if (option_pak_verbose()) {
-    expr
-  } else {
+  if (option_pak_quiet()) {
     without_callr_messages(expr)
+  } else {
+    expr
   }
 }
-
-option_pak_verbose <- function() {
-  is_true(getOption("cross.pak_verbose", default = FALSE))
+option_pak_quiet <- function() {
+  is_true(getOption("cross.pak_quiet", default = TRUE))
 }
-
 without_callr_messages <- function(expr) {
   suppressMessages(expr, classes = "callr_message")
 }
@@ -203,4 +333,14 @@ git_has_changes <- function(path) {
 with_usethis_quiet <- function(expr) {
   local_options(usethis.quiet = TRUE)
   expr
+}
+
+ui_done <- function(x, frame = caller_env()) {
+  if (!option_quiet()) {
+    usethis::ui_done(x, .envir = frame)
+  }
+  invisible()
+}
+option_quiet <- function() {
+  is_true(getOption("cross.quiet", default = !rlang::is_interactive()))
 }
