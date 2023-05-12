@@ -404,7 +404,12 @@ option_pak_quiet <- function() {
   is_true(getOption("cross.pak_quiet", default = TRUE))
 }
 without_callr_messages <- function(expr) {
-  suppressMessages(expr, classes = "callr_message")
+  withCallingHandlers(
+    expr,
+    callr_message = function(cnd) {
+      cnd_muffle(cnd)
+    }
+  )
 }
 
 ui_done <- function(x, frame = caller_env()) {
