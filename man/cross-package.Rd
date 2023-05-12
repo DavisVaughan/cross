@@ -8,6 +8,14 @@
 \description{
 Providings tooling to run a single function across multiple package versions, which is particularly useful for running before and after benchmarks.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/DavisVaughan/cross}
+  \item Report bugs at \url{https://github.com/DavisVaughan/cross/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Davis Vaughan \email{davis@posit.co}
 
