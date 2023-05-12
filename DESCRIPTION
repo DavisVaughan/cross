@@ -1,11 +1,13 @@
 Package: cross
-Title: What the Package Does (One Line, Title Case)
+Title: Run Functions Across Package Versions
 Version: 0.0.0.9000
 Authors@R: c(
     person("Davis", "Vaughan", , "davis@posit.co", role = c("aut", "cre")),
     person("Posit Software, PBC", role = c("cph", "fnd"))
   )
-Description: What the package does (one paragraph).
+Description: Providings tooling to run a single function across multiple package
+    versions, which is particularly useful for running before and after
+    benchmarks.
 License: MIT + file LICENSE
 Depends: 
     R (>= 3.5.0)

@@ -4,9 +4,9 @@
 \name{cross-package}
 \alias{cross}
 \alias{cross-package}
-\title{cross: What the Package Does (One Line, Title Case)}
+\title{cross: Run Functions Across Package Versions}
 \description{
-What the package does (one paragraph).
+Providings tooling to run a single function across multiple package versions, which is particularly useful for running before and after benchmarks.
 }
 \author{
 \strong{Maintainer}: Davis Vaughan \email{davis@posit.co}
