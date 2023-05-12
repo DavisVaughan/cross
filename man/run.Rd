@@ -6,8 +6,8 @@
 \usage{
 run(
   fn,
-  pkgs,
   ...,
+  pkgs,
   args = list(),
   libpath = .libPaths(),
   args_pak = list(),
@@ -26,12 +26,12 @@ Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set 
 \code{fn} is converted to a function with \code{\link[rlang:as_function]{rlang::as_function()}}, so it can be
 a lambda function.}
 
+\item{...}{These dots are for future extensions and must be empty.}
+
 \item{pkgs}{\verb{[character]}
 
 A character vector of package names or remote package specifications to
 install and run \code{fn} against. Passed along to \code{\link[pak:pkg_install]{pak::pkg_install()}}.}
-
-\item{...}{These dots are for future extensions and must be empty.}
 
 \item{args}{\verb{[list]}
 

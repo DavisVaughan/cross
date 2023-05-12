@@ -90,8 +90,8 @@
 #'   bench::mark(vec_detect_missing(x))
 #' })
 run <- function(fn,
-                pkgs,
                 ...,
+                pkgs,
                 args = list(),
                 libpath = .libPaths(),
                 args_pak = list(),
