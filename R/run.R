@@ -37,14 +37,17 @@
 #' @param fn `[function]`
 #'
 #'   A function to evaluate. The function is passed along to [callr::r()], so
-#'   it is evaluated in a fresh R session and must be self-contained. Typically
-#'   the function will not have any arguments.
+#'   it is evaluated in a fresh R session and must be self-contained.
 #'
 #'   Read the `func` docs of [callr::r()] for the full set of restrictions on
 #'   `fn`.
 #'
 #'   `fn` is converted to a function with [rlang::as_function()], so it can be
 #'   a lambda function.
+#'
+#' @param args `[list]`
+#'
+#'   An optional list of arguments to pass to the function.
 #'
 #' @param pkgs `[character]`
 #'
@@ -90,6 +93,7 @@
 #'
 #'   Can't include:
 #'   - `func`
+#'   - `args`
 #'   - `libpath`
 #'
 #' @returns
@@ -119,6 +123,7 @@
 #' })
 run <- function(fn,
                 ...,
+                args = list(),
                 pkgs = character(),
                 branches = character(),
                 libpath = .libPaths(),
@@ -132,6 +137,7 @@ run <- function(fn,
 
   fn <- as_function(fn)
 
+  vec_check_list(args)
   check_character(pkgs)
   check_character(branches)
   check_character(libpath)
@@ -172,12 +178,14 @@ run <- function(fn,
   results <- vector("list", length = n)
   ui_done("Running {usethis::ui_code('fn')} across variants")
 
+  args <- list(
+    func = fn,
+    args = args
+  )
+  args_callr[names(args)] <- args
+
   for (i in seq_len(n)) {
-    args <- list(
-      func = fn,
-      libpath = c(libs[[i]], libpath)
-    )
-    args_callr[names(args)] <- args
+    args_callr[["libpath"]] <- c(libs[[i]], libpath)
 
     elt <- inject(callr::r(!!!args_callr))
 

@@ -7,6 +7,7 @@
 run(
   fn,
   ...,
+  args = list(),
   pkgs = character(),
   branches = character(),
   libpath = .libPaths(),
@@ -18,8 +19,7 @@ run(
 \item{fn}{\verb{[function]}
 
 A function to evaluate. The function is passed along to \code{\link[callr:r]{callr::r()}}, so
-it is evaluated in a fresh R session and must be self-contained. Typically
-the function will not have any arguments.
+it is evaluated in a fresh R session and must be self-contained.
 
 Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set of restrictions on
 \code{fn}.
@@ -28,6 +28,10 @@ Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set 
 a lambda function.}
 
 \item{...}{These dots are for future extensions and must be empty.}
+
+\item{args}{\verb{[list]}
+
+An optional list of arguments to pass to the function.}
 
 \item{pkgs}{\verb{[character]}
 
@@ -76,6 +80,7 @@ A named list of arguments to pass on to \code{\link[callr:r]{callr::r()}}.
 Can't include:
 \itemize{
 \item \code{func}
+\item \code{args}
 \item \code{libpath}
 }}
 }
