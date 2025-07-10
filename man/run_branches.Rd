@@ -97,6 +97,12 @@ than different CRAN or GitHub versions of that package.
 
 The default behavior runs the current branch against the \code{main} branch.
 }
+\details{
+The installed packages are placed in temporary directories that act as an
+extra library path. The temporary directory is prepended to \code{libpath}, which
+is then passed along to \code{\link[callr:r]{callr::r()}} as the \code{libpath} argument there. This
+ensures that your personal package libraries remain untouched.
+}
 \section{Global options}{
 
 \itemize{

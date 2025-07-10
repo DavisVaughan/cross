@@ -3,8 +3,8 @@
 #' @description
 #' `run()` allows you to run a single function, `fn`, multiple times in separate
 #' R sessions, where each R sessions has different versions of packages
-#' installed. A typical use case is running a before/after benchmark, comparing
-#' the CRAN version of a package with a development version of the same package.
+#' installed. If you're looking to run benchmarks across different versions of
+#' packages, you likely want [bench()] instead.
 #'
 #' For example, `run(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would run `fn`
 #' in 2 separate R sessions, one with CRAN vctrs installed, and one with the
@@ -89,13 +89,15 @@
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
-run <- function(fn,
-                ...,
-                pkgs,
-                args = list(),
-                libpath = .libPaths(),
-                args_pak = list(),
-                args_callr = list()) {
+run <- function(
+  fn,
+  ...,
+  pkgs,
+  args = list(),
+  libpath = .libPaths(),
+  args_pak = list(),
+  args_callr = list()
+) {
   load_callr()
 
   check_dots_empty0(...)
@@ -157,6 +159,7 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #'
 #' The default behavior runs the current branch against the `main` branch.
 #'
+#' @inherit run details
 #' @inheritSection run Global options
 #'
 #' @inheritParams run
@@ -203,14 +206,16 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
-run_branches <- function(fn,
-                         ...,
-                         args = list(),
-                         current = TRUE,
-                         branches = "main",
-                         libpath = .libPaths(),
-                         args_pak = list(),
-                         args_callr = list()) {
+run_branches <- function(
+  fn,
+  ...,
+  args = list(),
+  current = TRUE,
+  branches = "main",
+  libpath = .libPaths(),
+  args_pak = list(),
+  args_callr = list()
+) {
   load_callr()
 
   check_dots_empty0(...)
@@ -342,12 +347,14 @@ with_usethis_quiet <- function(expr) {
 
 # ------------------------------------------------------------------------------
 
-run_libpaths <- function(fn,
-                         ...,
-                         args = list(),
-                         libpaths = list(),
-                         args_callr = list(),
-                         error_call = caller_env()) {
+run_libpaths <- function(
+  fn,
+  ...,
+  args = list(),
+  libpaths = list(),
+  args_callr = list(),
+  error_call = caller_env()
+) {
   check_dots_empty0(...)
 
   fn <- as_function(fn, call = error_call)
