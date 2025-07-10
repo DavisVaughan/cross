@@ -169,16 +169,28 @@ combine_bench_marks <- function(
   })
 
   sizes <- list_sizes(bench_marks)
-  size <- sum(sizes)
+  times <- vec_unique(sizes)
 
-  # Combine bench marks into one tibble
-  out <- list_unchop(bench_marks)
+  if (length(times) != 1L) {
+    abort("All bench marks must return the same number of rows.", call = call)
+  }
+
+  # TODO: Remove ASAP pending vctrs issue
+  bench_marks <- purrr::map(bench_marks, pre_strip_bench_classes)
+
+  # Combine bench marks into one tibble in such a way that `extra` can vary
+  # fastest, as that's usually how you want to look at the results and is in
+  # line with how `expression` is otherwise the thing that varies fastest, and
+  # we are putting something to the left of that column.
+  out <- vec_interleave(!!!bench_marks)
+
+  out <- post_add_bench_classes(out)
 
   # Append `extra` to the front of the tibble
-  extra <- vec_rep_each(extra, sizes)
+  extra <- vec_rep(extra, times)
   extra <- list(extra)
   names(extra) <- extra_name
-  extra <- tibble::new_tibble(extra, nrow = size)
+  extra <- tibble::new_tibble(extra, nrow = vec_size(out))
 
   out <- vec_cbind(extra, out)
 
@@ -202,4 +214,20 @@ check_list_of_bench_marks <- function(x, call = caller_env()) {
 
 is_bench_mark <- function(x) {
   inherits(x, "bench_mark")
+}
+
+# Ugh https://github.com/r-lib/vctrs/issues/1975
+pre_strip_bench_classes <- function(x) {
+  x[["min"]] <- as.double(x[["min"]])
+  x[["median"]] <- as.double(x[["median"]])
+  x[["mem_alloc"]] <- as.double(x[["mem_alloc"]])
+  x[["total_time"]] <- as.double(x[["total_time"]])
+  x
+}
+post_add_bench_classes <- function(x) {
+  x[["min"]] <- bench::as_bench_time(x[["min"]])
+  x[["median"]] <- bench::as_bench_time(x[["median"]])
+  x[["mem_alloc"]] <- bench::as_bench_bytes(x[["mem_alloc"]])
+  x[["total_time"]] <- bench::as_bench_time(x[["total_time"]])
+  x
 }
