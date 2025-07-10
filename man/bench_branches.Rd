@@ -48,9 +48,9 @@ the case whenever you open an RStudio project for the package in question.
 Technically, the path is determined by \code{\link[usethis:proj_utils]{usethis::proj_get()}}.
 
 Your git tree must be completely clean to use \code{branches}. If there are any
-uncommitted changes, an error will be thrown because \code{run()} must swap
-between the branches to install the package, potentially resulting in a
-loss of information. Note that untracked files are not included in this
+uncommitted changes, an error will be thrown because \code{run_branches()} must
+swap between the branches to install the package, potentially resulting in
+a loss of information. Note that untracked files are not included in this
 check - they should never be lost when the branch is changed, but they
 could affect the results.
 
@@ -119,7 +119,8 @@ Defaults to \code{TRUE} if not set.
 
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# Similar to `bench()`, but this runs the function across 2 local branches.
+# Similar to `bench_versions()`, but this runs the function across
+# 2 local branches.
 # To run this:
 # - The working directory is set to the RStudio project for vctrs
 # - There can't be any uncommitted git changes

@@ -1,27 +1,28 @@
 #' Benchmark a function across different package versions
 #'
 #' @description
-#' `bench()` allows you to run a single function, `fn`, multiple times in
-#' separate R sessions, where each R session has different versions of packages
-#' installed. A typical use case is running a before/after benchmark, comparing
-#' the CRAN version of a package with a development version of the same package.
+#' `bench_versions()` allows you to run a single function, `fn`, multiple times
+#' in separate R sessions, where each R session has different versions of
+#' packages installed. A typical use case is running a before/after benchmark,
+#' comparing the CRAN version of a package with a development version of the
+#' same package.
 #'
-#' For example, `bench(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would run `fn`
-#' in 2 separate R sessions, one with CRAN vctrs installed, and one with the
-#' pull request installed.
+#' For example, `bench_versions(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would
+#' run `fn` in 2 separate R sessions, one with CRAN vctrs installed, and one
+#' with the pull request installed.
 #'
-#' When using `bench()`, each call to `fn` must return a `<bench_mark>` data
-#' frame from the bench package. This is typically generated using either a
+#' When using `bench_versions()`, each call to `fn` must return a `<bench_mark>`
+#' data frame from the bench package. This is typically generated using either a
 #' call to [bench::mark()] or [bench::press()].
 #'
-#' `bench()` is similar to [run()], but is specifically designed to be useful in
-#' conjunction with the bench package when benchmarking across multiple package
-#' versions.
+#' `bench_versions()` is similar to [run_versions()], but is specifically
+#' designed to be useful in conjunction with the bench package when benchmarking
+#' across multiple package versions.
 #'
-#' @inherit run details
-#' @inheritSection run Global options
+#' @inherit run_versions details
+#' @inheritSection run_versions Global options
 #'
-#' @inheritParams run
+#' @inheritParams run_versions
 #'
 #' @returns
 #' A `<bench_mark>`.
@@ -29,14 +30,14 @@
 #' @export
 #' @examplesIf FALSE
 #' # Run a benchmark across 2 different versions of vctrs
-#' bench(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#' bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
 #'   library(vctrs)
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
 #'
 #' # You can also use `bench::press()` to generate a grid
-#' bench(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#' bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
 #'   library(vctrs)
 #'   set.seed(123)
 #'   x <- sample(100)
@@ -49,7 +50,7 @@
 #'     }
 #'   )
 #' })
-bench <- function(
+bench_versions <- function(
   fn,
   ...,
   pkgs,
@@ -64,7 +65,7 @@ bench <- function(
 
   check_dots_empty0(...)
 
-  out <- run(
+  out <- run_versions(
     fn = fn,
     pkgs = pkgs,
     args = args,
@@ -104,7 +105,8 @@ bench <- function(
 #'
 #' @export
 #' @examplesIf FALSE
-#' # Similar to `bench()`, but this runs the function across 2 local branches.
+#' # Similar to `bench_versions()`, but this runs the function across
+#' # 2 local branches.
 #' # To run this:
 #' # - The working directory is set to the RStudio project for vctrs
 #' # - There can't be any uncommitted git changes

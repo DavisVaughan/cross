@@ -48,9 +48,9 @@ the case whenever you open an RStudio project for the package in question.
 Technically, the path is determined by \code{\link[usethis:proj_utils]{usethis::proj_get()}}.
 
 Your git tree must be completely clean to use \code{branches}. If there are any
-uncommitted changes, an error will be thrown because \code{run()} must swap
-between the branches to install the package, potentially resulting in a
-loss of information. Note that untracked files are not included in this
+uncommitted changes, an error will be thrown because \code{run_branches()} must
+swap between the branches to install the package, potentially resulting in
+a loss of information. Note that untracked files are not included in this
 check - they should never be lost when the branch is changed, but they
 could affect the results.
 
@@ -91,9 +91,9 @@ branch of the package.
 }
 }
 \description{
-\code{run_branches()} is similar to \code{\link[=run]{run()}}, except it allows you to run \code{fn}
-across different local branches corresponding to the same package, rather
-than different CRAN or GitHub versions of that package.
+\code{run_branches()} is similar to \code{\link[=run_versions]{run_versions()}}, except it allows you to run
+\code{fn} across different local branches corresponding to the same package,
+rather than different CRAN or GitHub versions of that package.
 
 The default behavior runs the current branch against the \code{main} branch.
 }
@@ -122,7 +122,8 @@ Defaults to \code{TRUE} if not set.
 
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
-# Similar to `run()`, but this runs the function across 2 local branches.
+# Similar to `run_versions()`, but this runs the function across
+# 2 local branches.
 # To run this:
 # - The working directory is set to the RStudio project for vctrs
 # - There can't be any uncommitted git changes

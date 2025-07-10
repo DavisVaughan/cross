@@ -1,14 +1,14 @@
 #' Evaluate a function across different package versions
 #'
 #' @description
-#' `run()` allows you to run a single function, `fn`, multiple times in separate
-#' R sessions, where each R sessions has different versions of packages
+#' `run_versions()` allows you to run a single function, `fn`, multiple times in
+#' separate R sessions, where each R sessions has different versions of packages
 #' installed. If you're looking to run benchmarks across different versions of
-#' packages, you likely want [bench()] instead.
+#' packages, you likely want [bench_versions()] instead.
 #'
-#' For example, `run(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would run `fn`
-#' in 2 separate R sessions, one with CRAN vctrs installed, and one with the
-#' pull request installed.
+#' For example, `run_versions(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would
+#' run `fn` in 2 separate R sessions, one with CRAN vctrs installed, and one
+#' with the pull request installed.
 #'
 #' @details
 #' The installed packages are placed in temporary directories that act as an
@@ -84,12 +84,12 @@
 #' @export
 #' @examplesIf FALSE
 #' # Run a benchmark across 2 different versions of vctrs
-#' run(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#' run_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
 #'   library(vctrs)
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
-run <- function(
+run_versions <- function(
   fn,
   ...,
   pkgs,
@@ -153,16 +153,16 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #' Evaluate a function across different local package branches
 #'
 #' @description
-#' `run_branches()` is similar to [run()], except it allows you to run `fn`
-#' across different local branches corresponding to the same package, rather
-#' than different CRAN or GitHub versions of that package.
+#' `run_branches()` is similar to [run_versions()], except it allows you to run
+#' `fn` across different local branches corresponding to the same package,
+#' rather than different CRAN or GitHub versions of that package.
 #'
 #' The default behavior runs the current branch against the `main` branch.
 #'
-#' @inherit run details
-#' @inheritSection run Global options
+#' @inherit run_versions details
+#' @inheritSection run_versions Global options
 #'
-#' @inheritParams run
+#' @inheritParams run_versions
 #'
 #' @param current `[TRUE / FALSE]`
 #'
@@ -179,9 +179,9 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #'   Technically, the path is determined by [usethis::proj_get()].
 #'
 #'   Your git tree must be completely clean to use `branches`. If there are any
-#'   uncommitted changes, an error will be thrown because `run()` must swap
-#'   between the branches to install the package, potentially resulting in a
-#'   loss of information. Note that untracked files are not included in this
+#'   uncommitted changes, an error will be thrown because `run_branches()` must
+#'   swap between the branches to install the package, potentially resulting in
+#'   a loss of information. Note that untracked files are not included in this
 #'   check - they should never be lost when the branch is changed, but they
 #'   could affect the results.
 #'
@@ -195,7 +195,8 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #'
 #' @export
 #' @examplesIf FALSE
-#' # Similar to `run()`, but this runs the function across 2 local branches.
+#' # Similar to `run_versions()`, but this runs the function across
+#' # 2 local branches.
 #' # To run this:
 #' # - The working directory is set to the RStudio project for vctrs
 #' # - There can't be any uncommitted git changes
@@ -248,7 +249,7 @@ run_branches <- function(
 
   if (git_has_changes(path)) {
     message <- c(
-      "Can't use {.arg branches} when there are uncommited changes between the working directory and the git index.",
+      "Can't use {.fn run_branches} when there are uncommited changes between the working directory and the git index.",
       i = "Commit your changes first!"
     )
     cli::cli_abort(message)
