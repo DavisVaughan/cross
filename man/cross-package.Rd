@@ -6,7 +6,7 @@
 \alias{cross-package}
 \title{cross: Run Functions Across Package Versions}
 \description{
-Providings tooling to run a single function across multiple package versions, which is particularly useful for running before and after benchmarks.
+Tooling to run a single function across multiple package versions or across multiple local branches, which is particularly useful for running before and after benchmarks.
 }
 \seealso{
 Useful links:
