@@ -7,8 +7,7 @@
 
 [![R-CMD-check](https://github.com/DavisVaughan/cross/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DavisVaughan/cross/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
-coverage](https://codecov.io/gh/DavisVaughan/cross/branch/main/graph/badge.svg)](https://app.codecov.io/gh/DavisVaughan/cross?branch=main)
-
+coverage](https://codecov.io/gh/DavisVaughan/cross/graph/badge.svg)](https://app.codecov.io/gh/DavisVaughan/cross)
 <!-- badges: end -->
 
 The goal of cross is to rerun a single function across a configuration
