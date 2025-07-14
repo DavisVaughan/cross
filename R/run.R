@@ -297,7 +297,7 @@ install_branches <- function(branches, libs, original, path, args_pak) {
 
     gert::git_branch_checkout(branch, repo = path)
 
-    args_pak[["pkg"]] <- path
+    args_pak[["pkg"]] <- paste0("local::", path)
     args_pak[["lib"]] <- libs[[i]]
     args_pak[["ask"]] <- FALSE
 
