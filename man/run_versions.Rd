@@ -105,7 +105,7 @@ Defaults to \code{TRUE} if not set.
 }
 
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Run a benchmark across 2 different versions of vctrs
 run_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
   library(vctrs)

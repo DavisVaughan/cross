@@ -121,7 +121,7 @@ Defaults to \code{TRUE} if not set.
 }
 
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Similar to `run_versions()`, but this runs the function across
 # 2 local branches.
 # To run this:
