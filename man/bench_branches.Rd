@@ -2,12 +2,11 @@
 % Please edit documentation in R/bench.R
 \name{bench_branches}
 \alias{bench_branches}
-\title{Benchmark a function across different local package branches}
+\title{Benchmark an expression across different local package branches}
 \usage{
 bench_branches(
-  fn,
+  expr,
   ...,
-  args = list(),
   current = TRUE,
   branches = "main",
   libpath = .libPaths(),
@@ -16,22 +15,16 @@ bench_branches(
 )
 }
 \arguments{
-\item{fn}{\verb{[function]}
+\item{expr}{\verb{[expression]}
 
-A function to evaluate. The function is passed along to \code{\link[callr:r]{callr::r()}}, so
-it is evaluated in a fresh R session and must be self-contained.
+An expression to evaluate. The expression is passed along to \code{\link[callr:r]{callr::r()}}
+as the body of a function with zero arguments, so it is evaluated in a
+fresh R session and must be self-contained.
 
 Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set of restrictions on
-\code{fn}.
-
-\code{fn} is converted to a function with \code{\link[rlang:as_function]{rlang::as_function()}}, so it can be
-a lambda function.}
+\code{expr}.}
 
 \item{...}{These dots are for future extensions and must be empty.}
-
-\item{args}{\verb{[list]}
-
-An optional list of arguments to pass to the function.}
 
 \item{current}{\verb{[TRUE / FALSE]}
 
@@ -39,8 +32,8 @@ Should the current git branch be included in the vector of \code{branches}?}
 
 \item{branches}{\verb{[character]}
 
-A character vector of git branch names to check out, install, and run \code{fn}
-against.
+A character vector of git branch names to check out, install, and run
+\code{expr} against.
 
 It is expected that your working directory is set to the git directory
 of the package you want to install different branches of. This is typically
@@ -90,7 +83,7 @@ A \verb{<bench_mark>}.
 designed to be useful when benchmarking across different local package
 branches.
 
-When using \code{bench_branches()}, each call to \code{fn} must return a \verb{<bench_mark>}
+When using \code{bench_branches()}, the \code{expr} must return a \verb{<bench_mark>}
 data frame from the bench package. This is typically generated using either a
 call to \code{\link[bench:mark]{bench::mark()}} or \code{\link[bench:press]{bench::press()}}.
 }
@@ -119,14 +112,14 @@ Defaults to \code{TRUE} if not set.
 
 \examples{
 \dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
-# Similar to `bench_versions()`, but this runs the function across
+# Similar to `bench_versions()`, but this runs the expression across
 # 2 local branches.
 # To run this:
 # - The working directory is set to the RStudio project for vctrs
 # - There can't be any uncommitted git changes
 # - You are currently on a branch, say `fix/performance-bug`
 # - You'd like to run that branch against `main`
-bench_branches(~{
+bench_branches({
   library(vctrs)
   x <- c(TRUE, FALSE, NA, TRUE)
   bench::mark(vec_detect_missing(x))
