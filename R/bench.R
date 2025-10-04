@@ -1,19 +1,19 @@
-#' Benchmark a function across different package versions
+#' Benchmark an expression across different package versions
 #'
 #' @description
-#' `bench_versions()` allows you to run a single function, `fn`, multiple times
-#' in separate R sessions, where each R session has different versions of
+#' `bench_versions()` allows you to run a single expression, `expr`, multiple
+#' times in separate R sessions, where each R session has different versions of
 #' packages installed. A typical use case is running a before/after benchmark,
 #' comparing the CRAN version of a package with a development version of the
 #' same package.
 #'
-#' For example, `bench_versions(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would
-#' run `fn` in 2 separate R sessions, one with CRAN vctrs installed, and one
-#' with the pull request installed.
+#' For example, `bench_versions(expr, pkgs = c("vctrs", "r-lib/vctrs#100"))`
+#' would run `expr` in 2 separate R sessions, one with CRAN vctrs installed, and
+#' one with the pull request installed.
 #'
-#' When using `bench_versions()`, each call to `fn` must return a `<bench_mark>`
-#' data frame from the bench package. This is typically generated using either a
-#' call to [bench::mark()] or [bench::press()].
+#' When using `bench_versions()`, the `expr` must return a `<bench_mark>` data
+#' frame from the bench package. This is typically generated using either a call
+#' to [bench::mark()] or [bench::press()].
 #'
 #' `bench_versions()` is similar to [run_versions()], but is specifically
 #' designed to be useful in conjunction with the bench package when benchmarking
@@ -30,14 +30,14 @@
 #' @export
 #' @examplesIf FALSE
 #' # Run a benchmark across 2 different versions of vctrs
-#' bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#' bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
 #'   library(vctrs)
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
 #'
 #' # You can also use `bench::press()` to generate a grid
-#' bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#' bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
 #'   library(vctrs)
 #'   set.seed(123)
 #'   x <- sample(100)
@@ -51,10 +51,9 @@
 #'   )
 #' })
 bench_versions <- function(
-  fn,
+  expr,
   ...,
   pkgs,
-  args = list(),
   libpath = .libPaths(),
   args_pak = list(),
   args_callr = list()
@@ -65,10 +64,11 @@ bench_versions <- function(
 
   check_dots_empty0(...)
 
+  expr <- enexpr(expr)
+
   out <- run_versions(
-    fn = fn,
+    expr = !!expr,
     pkgs = pkgs,
-    args = args,
     libpath = libpath,
     args_pak = args_pak,
     args_callr = args_callr
@@ -84,14 +84,14 @@ bench_versions <- function(
   )
 }
 
-#' Benchmark a function across different local package branches
+#' Benchmark an expression across different local package branches
 #'
 #' @description
 #' `bench_branches()` is similar to [run_branches()], but is specifically
 #' designed to be useful when benchmarking across different local package
 #' branches.
 #'
-#' When using `bench_branches()`, each call to `fn` must return a `<bench_mark>`
+#' When using `bench_branches()`, the `expr` must return a `<bench_mark>`
 #' data frame from the bench package. This is typically generated using either a
 #' call to [bench::mark()] or [bench::press()].
 #'
@@ -105,22 +105,21 @@ bench_versions <- function(
 #'
 #' @export
 #' @examplesIf FALSE
-#' # Similar to `bench_versions()`, but this runs the function across
+#' # Similar to `bench_versions()`, but this runs the expression across
 #' # 2 local branches.
 #' # To run this:
 #' # - The working directory is set to the RStudio project for vctrs
 #' # - There can't be any uncommitted git changes
 #' # - You are currently on a branch, say `fix/performance-bug`
 #' # - You'd like to run that branch against `main`
-#' bench_branches(~{
+#' bench_branches({
 #'   library(vctrs)
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
 bench_branches <- function(
-  fn,
+  expr,
   ...,
-  args = list(),
   current = TRUE,
   branches = "main",
   libpath = .libPaths(),
@@ -133,9 +132,10 @@ bench_branches <- function(
 
   check_dots_empty0(...)
 
+  expr <- enexpr(expr)
+
   out <- run_branches(
-    fn = fn,
-    args = args,
+    expr = !!expr,
     current = current,
     branches = branches,
     libpath = libpath,
@@ -208,7 +208,7 @@ load_bench <- function() {
 
 check_list_of_bench_marks <- function(x, call = caller_env()) {
   if (!all(purrr::map_lgl(x, is_bench_mark))) {
-    abort("`fn` must return a <bench_mark>.", call = call)
+    abort("`expr` must return a <bench_mark>.", call = call)
   }
 }
 

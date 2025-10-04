@@ -2,12 +2,11 @@
 % Please edit documentation in R/run.R
 \name{run_branches}
 \alias{run_branches}
-\title{Evaluate a function across different local package branches}
+\title{Evaluate an expression across different local package branches}
 \usage{
 run_branches(
-  fn,
+  expr,
   ...,
-  args = list(),
   current = TRUE,
   branches = "main",
   libpath = .libPaths(),
@@ -16,22 +15,16 @@ run_branches(
 )
 }
 \arguments{
-\item{fn}{\verb{[function]}
+\item{expr}{\verb{[expression]}
 
-A function to evaluate. The function is passed along to \code{\link[callr:r]{callr::r()}}, so
-it is evaluated in a fresh R session and must be self-contained.
+An expression to evaluate. The expression is passed along to \code{\link[callr:r]{callr::r()}}
+as the body of a function with zero arguments, so it is evaluated in a
+fresh R session and must be self-contained.
 
 Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set of restrictions on
-\code{fn}.
-
-\code{fn} is converted to a function with \code{\link[rlang:as_function]{rlang::as_function()}}, so it can be
-a lambda function.}
+\code{expr}.}
 
 \item{...}{These dots are for future extensions and must be empty.}
-
-\item{args}{\verb{[list]}
-
-An optional list of arguments to pass to the function.}
 
 \item{current}{\verb{[TRUE / FALSE]}
 
@@ -39,8 +32,8 @@ Should the current git branch be included in the vector of \code{branches}?}
 
 \item{branches}{\verb{[character]}
 
-A character vector of git branch names to check out, install, and run \code{fn}
-against.
+A character vector of git branch names to check out, install, and run
+\code{expr} against.
 
 It is expected that your working directory is set to the git directory
 of the package you want to install different branches of. This is typically
@@ -86,13 +79,13 @@ Can't include:
 A data frame with two columns:
 \itemize{
 \item \code{branch}, a character vector containing \code{branches}.
-\item \code{result}, a list column containing the result of calling \code{fn} for that
+\item \code{result}, a list column containing the result of calling \code{expr} for that
 branch of the package.
 }
 }
 \description{
 \code{run_branches()} is similar to \code{\link[=run_versions]{run_versions()}}, except it allows you to run
-\code{fn} across different local branches corresponding to the same package,
+\code{expr} across different local branches corresponding to the same package,
 rather than different CRAN or GitHub versions of that package.
 
 The default behavior runs the current branch against the \code{main} branch.
@@ -122,14 +115,14 @@ Defaults to \code{TRUE} if not set.
 
 \examples{
 \dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
-# Similar to `run_versions()`, but this runs the function across
+# Similar to `run_versions()`, but this runs the expression across
 # 2 local branches.
 # To run this:
 # - The working directory is set to the RStudio project for vctrs
 # - There can't be any uncommitted git changes
 # - You are currently on a branch, say `fix/performance-bug`
 # - You'd like to run that branch against `main`
-run_branches(~{
+run_branches({
   library(vctrs)
   x <- c(TRUE, FALSE, NA, TRUE)
   bench::mark(vec_detect_missing(x))

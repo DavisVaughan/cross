@@ -2,40 +2,33 @@
 % Please edit documentation in R/run.R
 \name{run_versions}
 \alias{run_versions}
-\title{Evaluate a function across different package versions}
+\title{Evaluate an expression across different package versions}
 \usage{
 run_versions(
-  fn,
+  expr,
   ...,
   pkgs,
-  args = list(),
   libpath = .libPaths(),
   args_pak = list(),
   args_callr = list()
 )
 }
 \arguments{
-\item{fn}{\verb{[function]}
+\item{expr}{\verb{[expression]}
 
-A function to evaluate. The function is passed along to \code{\link[callr:r]{callr::r()}}, so
-it is evaluated in a fresh R session and must be self-contained.
+An expression to evaluate. The expression is passed along to \code{\link[callr:r]{callr::r()}}
+as the body of a function with zero arguments, so it is evaluated in a
+fresh R session and must be self-contained.
 
 Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set of restrictions on
-\code{fn}.
-
-\code{fn} is converted to a function with \code{\link[rlang:as_function]{rlang::as_function()}}, so it can be
-a lambda function.}
+\code{expr}.}
 
 \item{...}{These dots are for future extensions and must be empty.}
 
 \item{pkgs}{\verb{[character]}
 
 A character vector of package names or remote package specifications to
-install and run \code{fn} against. Passed along to \code{\link[pak:pkg_install]{pak::pkg_install()}}.}
-
-\item{args}{\verb{[list]}
-
-An optional list of arguments to pass to the function.}
+install and run \code{expr} against. Passed along to \code{\link[pak:pkg_install]{pak::pkg_install()}}.}
 
 \item{libpath}{\verb{[character]}
 
@@ -67,18 +60,18 @@ Can't include:
 A data frame with two columns:
 \itemize{
 \item \code{pkg}, a character vector containing \code{pkgs}.
-\item \code{result}, a list column containing the result of calling \code{fn} for that
+\item \code{result}, a list column containing the result of calling \code{expr} for that
 version of the package.
 }
 }
 \description{
-\code{run_versions()} allows you to run a single function, \code{fn}, multiple times in
-separate R sessions, where each R sessions has different versions of packages
-installed. If you're looking to run benchmarks across different versions of
-packages, you likely want \code{\link[=bench_versions]{bench_versions()}} instead.
+\code{run_versions()} allows you to run a single expression, \code{expr}, multiple
+times in separate R sessions, where each R sessions has different versions of
+packages installed. If you're looking to run benchmarks across different
+versions of packages, you likely want \code{\link[=bench_versions]{bench_versions()}} instead.
 
-For example, \code{run_versions(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))} would
-run \code{fn} in 2 separate R sessions, one with CRAN vctrs installed, and one
+For example, \code{run_versions(expr, pkgs = c("vctrs", "r-lib/vctrs#100"))} would
+run \code{expr} in 2 separate R sessions, one with CRAN vctrs installed, and one
 with the pull request installed.
 }
 \details{
@@ -107,7 +100,8 @@ Defaults to \code{TRUE} if not set.
 \examples{
 \dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Run a benchmark across 2 different versions of vctrs
-run_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+# (See `bench_versions()` for an even easier way)
+run_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
   library(vctrs)
   x <- c(TRUE, FALSE, NA, TRUE)
   bench::mark(vec_detect_missing(x))

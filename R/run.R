@@ -1,13 +1,13 @@
-#' Evaluate a function across different package versions
+#' Evaluate an expression across different package versions
 #'
 #' @description
-#' `run_versions()` allows you to run a single function, `fn`, multiple times in
-#' separate R sessions, where each R sessions has different versions of packages
-#' installed. If you're looking to run benchmarks across different versions of
-#' packages, you likely want [bench_versions()] instead.
+#' `run_versions()` allows you to run a single expression, `expr`, multiple
+#' times in separate R sessions, where each R sessions has different versions of
+#' packages installed. If you're looking to run benchmarks across different
+#' versions of packages, you likely want [bench_versions()] instead.
 #'
-#' For example, `run_versions(fn, pkgs = c("vctrs", "r-lib/vctrs#100"))` would
-#' run `fn` in 2 separate R sessions, one with CRAN vctrs installed, and one
+#' For example, `run_versions(expr, pkgs = c("vctrs", "r-lib/vctrs#100"))` would
+#' run `expr` in 2 separate R sessions, one with CRAN vctrs installed, and one
 #' with the pull request installed.
 #'
 #' @details
@@ -33,25 +33,19 @@
 #'
 #' @inheritParams rlang::args_dots_empty
 #'
-#' @param fn `[function]`
+#' @param expr `[expression]`
 #'
-#'   A function to evaluate. The function is passed along to [callr::r()], so
-#'   it is evaluated in a fresh R session and must be self-contained.
+#'   An expression to evaluate. The expression is passed along to [callr::r()]
+#'   as the body of a function with zero arguments, so it is evaluated in a
+#'   fresh R session and must be self-contained.
 #'
 #'   Read the `func` docs of [callr::r()] for the full set of restrictions on
-#'   `fn`.
-#'
-#'   `fn` is converted to a function with [rlang::as_function()], so it can be
-#'   a lambda function.
-#'
-#' @param args `[list]`
-#'
-#'   An optional list of arguments to pass to the function.
+#'   `expr`.
 #'
 #' @param pkgs `[character]`
 #'
 #'   A character vector of package names or remote package specifications to
-#'   install and run `fn` against. Passed along to [pak::pkg_install()].
+#'   install and run `expr` against. Passed along to [pak::pkg_install()].
 #'
 #' @param libpath `[character]`
 #'
@@ -78,22 +72,22 @@
 #' @returns
 #' A data frame with two columns:
 #' - `pkg`, a character vector containing `pkgs`.
-#' - `result`, a list column containing the result of calling `fn` for that
+#' - `result`, a list column containing the result of calling `expr` for that
 #'   version of the package.
 #'
 #' @export
 #' @examplesIf FALSE
 #' # Run a benchmark across 2 different versions of vctrs
-#' run_versions(pkgs = c("vctrs", "r-lib/vctrs"), ~{
+#' # (See `bench_versions()` for an even easier way)
+#' run_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
 #'   library(vctrs)
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
 run_versions <- function(
-  fn,
+  expr,
   ...,
   pkgs,
-  args = list(),
   libpath = .libPaths(),
   args_pak = list(),
   args_callr = list()
@@ -101,6 +95,8 @@ run_versions <- function(
   load_callr()
 
   check_dots_empty0(...)
+
+  expr <- enexpr(expr)
 
   check_character(pkgs)
   check_character(libpath)
@@ -116,8 +112,7 @@ run_versions <- function(
   })
 
   results <- run_libpaths(
-    fn = fn,
-    args = args,
+    expr = expr,
     libpaths = libpaths,
     args_callr = args_callr
   )
@@ -150,11 +145,11 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 
 # ------------------------------------------------------------------------------
 
-#' Evaluate a function across different local package branches
+#' Evaluate an expression across different local package branches
 #'
 #' @description
 #' `run_branches()` is similar to [run_versions()], except it allows you to run
-#' `fn` across different local branches corresponding to the same package,
+#' `expr` across different local branches corresponding to the same package,
 #' rather than different CRAN or GitHub versions of that package.
 #'
 #' The default behavior runs the current branch against the `main` branch.
@@ -170,8 +165,8 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #'
 #' @param branches `[character]`
 #'
-#'   A character vector of git branch names to check out, install, and run `fn`
-#'   against.
+#'   A character vector of git branch names to check out, install, and run
+#'   `expr` against.
 #'
 #'   It is expected that your working directory is set to the git directory
 #'   of the package you want to install different branches of. This is typically
@@ -190,27 +185,26 @@ install_pkgs <- function(pkgs, libs, args_pak) {
 #' @returns
 #' A data frame with two columns:
 #' - `branch`, a character vector containing `branches`.
-#' - `result`, a list column containing the result of calling `fn` for that
+#' - `result`, a list column containing the result of calling `expr` for that
 #'   branch of the package.
 #'
 #' @export
 #' @examplesIf FALSE
-#' # Similar to `run_versions()`, but this runs the function across
+#' # Similar to `run_versions()`, but this runs the expression across
 #' # 2 local branches.
 #' # To run this:
 #' # - The working directory is set to the RStudio project for vctrs
 #' # - There can't be any uncommitted git changes
 #' # - You are currently on a branch, say `fix/performance-bug`
 #' # - You'd like to run that branch against `main`
-#' run_branches(~{
+#' run_branches({
 #'   library(vctrs)
 #'   x <- c(TRUE, FALSE, NA, TRUE)
 #'   bench::mark(vec_detect_missing(x))
 #' })
 run_branches <- function(
-  fn,
+  expr,
   ...,
-  args = list(),
   current = TRUE,
   branches = "main",
   libpath = .libPaths(),
@@ -220,6 +214,8 @@ run_branches <- function(
   load_callr()
 
   check_dots_empty0(...)
+
+  expr <- enexpr(expr)
 
   check_bool(current)
   check_character(branches)
@@ -277,8 +273,7 @@ run_branches <- function(
   })
 
   results <- run_libpaths(
-    fn = fn,
-    args = args,
+    expr = expr,
     libpaths = libpaths,
     args_callr = args_callr
   )
@@ -349,29 +344,31 @@ with_usethis_quiet <- function(expr) {
 # ------------------------------------------------------------------------------
 
 run_libpaths <- function(
-  fn,
+  expr,
   ...,
-  args = list(),
   libpaths = list(),
   args_callr = list(),
   error_call = caller_env()
 ) {
   check_dots_empty0(...)
 
-  fn <- as_function(fn, call = error_call)
-
-  vec_check_list(args, call = error_call)
   vec_check_list(libpaths, call = error_call)
   vec_check_list(args_callr, call = error_call)
   check_named2(args_callr, call = error_call)
 
-  args_callr[["func"]] <- fn
-  args_callr[["args"]] <- args
+  # `callr::r()` will set the function environment to the `.GlobalEnv` anyways
+  func <- new_function(
+    args = list(),
+    body = expr,
+    env = global_env()
+  )
+
+  args_callr[["func"]] <- func
 
   n <- length(libpaths)
   out <- vector("list", length = n)
 
-  ui_done("Running {usethis::ui_code('fn')} across variants")
+  ui_done("Running {usethis::ui_code('expr')} across variants")
 
   for (i in seq_len(n)) {
     args_callr[["libpath"]] <- libpaths[[i]]

@@ -4,9 +4,9 @@
 \name{cross-package}
 \alias{cross}
 \alias{cross-package}
-\title{cross: Run Functions Across Package Versions}
+\title{cross: Run Expressions Across Package Versions}
 \description{
-Tooling to run a single function across multiple package versions or across multiple local branches, which is particularly useful for running before and after benchmarks.
+Tooling to run a single expression across multiple package versions or across multiple local branches, which is particularly useful for running before and after benchmarks.
 }
 \seealso{
 Useful links:
