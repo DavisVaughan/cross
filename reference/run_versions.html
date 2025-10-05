@@ -90,9 +90,12 @@ fresh R session and must be self-contained.</p>
 
 
 <dt id="arg-pkgs">pkgs<a class="anchor" aria-label="anchor" href="#arg-pkgs"></a></dt>
-<dd><p><code>[character]</code></p>
+<dd><p><code>[character / data frame of character columns]</code></p>
 <p>A character vector of package names or remote package specifications to
-install and run <code>expr</code> against. Passed along to <code><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pak::pkg_install()</a></code>.</p></dd>
+install and run <code>expr</code> against. Passed along to <code><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pak::pkg_install()</a></code>.</p>
+<p>For more complex installations, also accepts a data frame of character
+columns of package names. Each row in the data frame specifies a package
+combination to run against.</p></dd>
 
 
 <dt id="arg-libpath">libpath<a class="anchor" aria-label="anchor" href="#arg-libpath"></a></dt>
@@ -120,9 +123,9 @@ install and run <code>expr</code> against. Passed along to <code><a href="https:
 </dl></div>
     <div id="value">
     <h2>Value</h2>
-    <p>A data frame with two columns:</p><ul><li><p><code>pkg</code>, a character vector containing <code>pkgs</code>.</p></li>
+    <p>A data frame with two columns:</p><ul><li><p><code>pkg</code>, a character vector containing the packages installed.</p></li>
 <li><p><code>result</code>, a list column containing the result of calling <code>expr</code> for that
-version of the package.</p></li>
+combination of packages.</p></li>
 </ul></div>
     <div id="details">
     <h2>Details</h2>
@@ -153,6 +156,20 @@ shown when running interactively.</p></li>
 <span class="r-in"><span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://vctrs.r-lib.org/" class="external-link">vctrs</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">NA</span>, <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu">bench</span><span class="fu">::</span><span class="fu"><a href="https://bench.r-lib.org/reference/mark.html" class="external-link">mark</a></span><span class="op">(</span><span class="fu"><a href="https://vctrs.r-lib.org/reference/missing.html" class="external-link">vec_detect_missing</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Run a benchmark against a combination of development versions</span></span></span>
+<span class="r-in"><span><span class="va">pkgs</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="op">~</span><span class="va">vctrs</span>, <span class="op">~</span><span class="va">purrr</span>,</span></span>
+<span class="r-in"><span>  <span class="st">"vctrs"</span>, <span class="st">"purrr"</span>,</span></span>
+<span class="r-in"><span>  <span class="st">"r-lib/vctrs"</span>, <span class="st">"purrr"</span>,</span></span>
+<span class="r-in"><span>  <span class="st">"r-lib/vctrs"</span>, <span class="st">"tidyverse/purrr"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="fu">run_versions</span><span class="op">(</span>pkgs <span class="op">=</span> <span class="va">pkgs</span>, <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">bench</span><span class="fu">::</span><span class="fu"><a href="https://bench.r-lib.org/reference/mark.html" class="external-link">mark</a></span><span class="op">(</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">is.double</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 </code></pre></div>

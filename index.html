@@ -81,18 +81,38 @@
 </h2>
 <p><code><a href="reference/bench_versions.html">cross::bench_versions()</a></code> runs an expression across various versions of the same package. The expression itself must end with a call to either <code><a href="https://bench.r-lib.org/reference/mark.html" class="external-link">bench::mark()</a></code> or <code><a href="https://bench.r-lib.org/reference/press.html" class="external-link">bench::press()</a></code>. The <code>pkgs</code> can be any remote specification supported by <code><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pak::pkg_install()</a></code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">out</span> <span class="op">&lt;-</span> <span class="fu">cross</span><span class="fu">::</span><span class="fu"><a href="reference/bench_versions.html">bench_versions</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vctrs"</span>, <span class="st">"r-lib/vctrs"</span><span class="op">)</span>, <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="fu">cross</span><span class="fu">::</span><span class="fu"><a href="reference/bench_versions.html">bench_versions</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vctrs"</span>, <span class="st">"r-lib/vctrs"</span><span class="op">)</span>, <span class="op">{</span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://vctrs.r-lib.org/" class="external-link">vctrs</a></span><span class="op">)</span></span>
 <span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="cn">NA</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="cn">NA</span><span class="op">)</span></span>
 <span>  <span class="fu">bench</span><span class="fu">::</span><span class="fu"><a href="https://bench.r-lib.org/reference/mark.html" class="external-link">mark</a></span><span class="op">(</span>missing <span class="op">=</span> <span class="fu"><a href="https://vctrs.r-lib.org/reference/missing.html" class="external-link">vec_detect_missing</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">}</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">out</span></span>
 <span><span class="co">#&gt; # A tibble: 2 × 14</span></span>
 <span><span class="co">#&gt;   pkg         expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc</span></span>
 <span><span class="co">#&gt;   &lt;chr&gt;       &lt;bch:expr&gt; &lt;bch:tm&gt; &lt;bch:&gt;     &lt;dbl&gt; &lt;bch:byt&gt;    &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt;</span></span>
 <span><span class="co">#&gt; 1 vctrs       missing       287ns  369ns  2060916.    2.23KB        0 10000     0</span></span>
 <span><span class="co">#&gt; 2 r-lib/vctrs missing       230ns  320ns  2338528.    2.25KB        0 10000     0</span></span>
+<span><span class="co">#&gt; # ℹ 5 more variables: total_time &lt;bch:tm&gt;, result &lt;list&gt;, memory &lt;list&gt;,</span></span>
+<span><span class="co">#&gt; #   time &lt;list&gt;, gc &lt;list&gt;</span></span></code></pre></div>
+<p>If you have a more complex combination of packages to benchmark against, you can supply a data frame where each row of the data frame represents a package combination.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">pkgs</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tribble.html" class="external-link">tribble</a></span><span class="op">(</span></span>
+<span>  <span class="op">~</span><span class="va">vctrs</span>, <span class="op">~</span><span class="va">purrr</span>,</span>
+<span>  <span class="st">"vctrs"</span>, <span class="st">"purrr"</span>,</span>
+<span>  <span class="st">"r-lib/vctrs"</span>, <span class="st">"purrr"</span>,</span>
+<span>  <span class="st">"r-lib/vctrs"</span>, <span class="st">"tidyverse/purrr"</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu">cross</span><span class="fu">::</span><span class="fu"><a href="reference/bench_versions.html">bench_versions</a></span><span class="op">(</span>pkgs <span class="op">=</span> <span class="va">pkgs</span>, <span class="op">{</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://purrr.tidyverse.org/" class="external-link">purrr</a></span><span class="op">)</span></span>
+<span>  <span class="va">x</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span><span class="op">)</span></span>
+<span>  <span class="fu">bench</span><span class="fu">::</span><span class="fu"><a href="https://bench.r-lib.org/reference/mark.html" class="external-link">mark</a></span><span class="op">(</span><span class="fu"><a href="https://purrr.tidyverse.org/reference/map.html" class="external-link">map</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">is.double</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">}</span><span class="op">)</span></span>
+<span><span class="co">#&gt; # A tibble: 3 × 14</span></span>
+<span><span class="co">#&gt;   pkg            expression    min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc</span></span>
+<span><span class="co">#&gt;   &lt;chr&gt;          &lt;bch:expr&gt; &lt;bch:&gt; &lt;bch:&gt;     &lt;dbl&gt; &lt;bch:byt&gt;    &lt;dbl&gt; &lt;int&gt; &lt;dbl&gt;</span></span>
+<span><span class="co">#&gt; 1 vctrs, purrr   map(x, is… 39.2µs 40.2µs    24005.     410KB     116.  9952    48</span></span>
+<span><span class="co">#&gt; 2 r-lib/vctrs, … map(x, is…   39µs 39.9µs    24225.     410KB     117.  9952    48</span></span>
+<span><span class="co">#&gt; 3 r-lib/vctrs, … map(x, is… 10.1µs 10.5µs    91029.     142KB     164.  9982    18</span></span>
 <span><span class="co">#&gt; # ℹ 5 more variables: total_time &lt;bch:tm&gt;, result &lt;list&gt;, memory &lt;list&gt;,</span></span>
 <span><span class="co">#&gt; #   time &lt;list&gt;, gc &lt;list&gt;</span></span></code></pre></div>
 <p><code><a href="reference/bench_branches.html">cross::bench_branches()</a></code> runs an expression across various local branches. It assumes that:</p>
@@ -102,7 +122,7 @@
 <li>There are no uncommitted git changes.</li>
 </ul>
 <p>If those are true, then it will automatically run the expression against the current branch and the <code>main</code> branch, but you can change this with the <code>current</code> and <code>branches</code> arguments.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Not run here, but assuming we are in the vctrs repo this would run the</span></span>
 <span><span class="co"># expression against whatever branch we are on and the `main` branch</span></span>
 <span></span>
