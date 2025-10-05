@@ -32,18 +32,43 @@ the same package. The expression itself must end with a call to either
 specification supported by `pak::pkg_install()`.
 
 ``` r
-out <- cross::bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
+cross::bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
   library(vctrs)
   x <- c(1, NA, 2, 3, NA)
   bench::mark(missing = vec_detect_missing(x))
 })
-
-out
 #> # A tibble: 2 × 14
 #>   pkg         expression      min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc
 #>   <chr>       <bch:expr> <bch:tm> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>
 #> 1 vctrs       missing       287ns  369ns  2060916.    2.23KB        0 10000     0
 #> 2 r-lib/vctrs missing       230ns  320ns  2338528.    2.25KB        0 10000     0
+#> # ℹ 5 more variables: total_time <bch:tm>, result <list>, memory <list>,
+#> #   time <list>, gc <list>
+```
+
+If you have a more complex combination of packages to benchmark against,
+you can supply a data frame where each row of the data frame represents
+a package combination.
+
+``` r
+pkgs <- tibble::tribble(
+  ~vctrs, ~purrr,
+  "vctrs", "purrr",
+  "r-lib/vctrs", "purrr",
+  "r-lib/vctrs", "tidyverse/purrr"
+)
+
+cross::bench_versions(pkgs = pkgs, {
+  library(purrr)
+  x <- list(1, 2)
+  bench::mark(map(x, is.double))
+})
+#> # A tibble: 3 × 14
+#>   pkg            expression    min median `itr/sec` mem_alloc `gc/sec` n_itr  n_gc
+#>   <chr>          <bch:expr> <bch:> <bch:>     <dbl> <bch:byt>    <dbl> <int> <dbl>
+#> 1 vctrs, purrr   map(x, is… 39.2µs 40.2µs    24005.     410KB     116.  9952    48
+#> 2 r-lib/vctrs, … map(x, is…   39µs 39.9µs    24225.     410KB     117.  9952    48
+#> 3 r-lib/vctrs, … map(x, is… 10.1µs 10.5µs    91029.     142KB     164.  9982    18
 #> # ℹ 5 more variables: total_time <bch:tm>, result <list>, memory <list>,
 #> #   time <list>, gc <list>
 ```
