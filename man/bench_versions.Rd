@@ -25,10 +25,14 @@ Read the \code{func} docs of \code{\link[callr:r]{callr::r()}} for the full set 
 
 \item{...}{These dots are for future extensions and must be empty.}
 
-\item{pkgs}{\verb{[character]}
+\item{pkgs}{\verb{[character / data frame of character columns]}
 
 A character vector of package names or remote package specifications to
-install and run \code{expr} against. Passed along to \code{\link[pak:pkg_install]{pak::pkg_install()}}.}
+install and run \code{expr} against. Passed along to \code{\link[pak:pkg_install]{pak::pkg_install()}}.
+
+For more complex installations, also accepts a data frame of character
+columns of package names. Each row in the data frame specifies a package
+combination to run against.}
 
 \item{libpath}{\verb{[character]}
 
@@ -123,6 +127,20 @@ bench_versions(pkgs = c("vctrs", "r-lib/vctrs"), {
       bench::mark(vec_match(x, table))
     }
   )
+})
+
+# Run a benchmark against a combination of development versions
+pkgs <- tibble::tribble(
+  ~vctrs, ~purrr,
+  "vctrs", "purrr",
+  "r-lib/vctrs", "purrr",
+  "r-lib/vctrs", "tidyverse/purrr"
+)
+
+bench_versions(pkgs = pkgs, {
+  library(purrr)
+  x <- list(1, 2)
+  bench::mark(map(x, is.double))
 })
 \dontshow{\}) # examplesIf}
 }

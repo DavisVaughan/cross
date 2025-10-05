@@ -50,6 +50,20 @@
 #'     }
 #'   )
 #' })
+#'
+#' # Run a benchmark against a combination of development versions
+#' pkgs <- tibble::tribble(
+#'   ~vctrs, ~purrr,
+#'   "vctrs", "purrr",
+#'   "r-lib/vctrs", "purrr",
+#'   "r-lib/vctrs", "tidyverse/purrr"
+#' )
+#'
+#' bench_versions(pkgs = pkgs, {
+#'   library(purrr)
+#'   x <- list(1, 2)
+#'   bench::mark(map(x, is.double))
+#' })
 bench_versions <- function(
   expr,
   ...,
