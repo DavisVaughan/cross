@@ -121,7 +121,7 @@ run_versions <- function(
   list_of_pkgs <- pkgs[["list_of_pkgs"]]
 
   check_character(libpath)
-  vec_check_list(args_pak)
+  obj_check_list(args_pak)
   check_named2(args_pak)
 
   n <- length(list_of_pkgs)
@@ -374,7 +374,7 @@ run_branches <- function(
   check_bool(current)
   check_character(branches)
   check_character(libpath)
-  vec_check_list(args_pak)
+  obj_check_list(args_pak)
   check_named2(args_pak)
 
   path <- with_usethis_quiet({
@@ -506,8 +506,8 @@ run_libpaths <- function(
 ) {
   check_dots_empty0(...)
 
-  vec_check_list(libpaths, call = error_call)
-  vec_check_list(args_callr, call = error_call)
+  obj_check_list(libpaths, call = error_call)
+  obj_check_list(args_callr, call = error_call)
   check_named2(args_callr, call = error_call)
 
   # `callr::r()` will set the function environment to the `.GlobalEnv` anyways
