@@ -242,19 +242,18 @@ normalize_data_frame_pkgs <- function(pkgs, error_call) {
 # - Names of `x` are used in error messages, but are then discarded
 # - Each element of `x` is coerced to the common type of the elements, or
 #   `ptype`
-# - Each element of `x` is recycled to the common size of the elements, or
-#   `size`
+# - Each element of `x` is recycled to the common size of the elements
 # - Output is a list of size `size`. Each element is a vector of size `x_size`
 #   and type `ptype`.
 list_transpose <- function(
   x,
   ...,
   ptype = NULL,
-  size = NULL,
   x_arg = caller_arg(x),
   error_call = caller_env()
 ) {
   obj_check_list(x, arg = x_arg, call = error_call)
+  list_check_all_vectors(x, arg = x_arg, call = error_call)
 
   x_size <- vec_size(x)
 
@@ -266,7 +265,6 @@ list_transpose <- function(
   )
   size <- vec_size_common(
     !!!x,
-    .size = size,
     .arg = x_arg,
     .call = error_call
   )
