@@ -78,15 +78,16 @@ bench_versions <- function(
 
   check_dots_empty0(...)
 
-  expr <- enexpr(expr)
+  # Not `enexpr()` as that splices eagerly (#6)
+  expr <- substitute(expr)
 
-  out <- run_versions(
+  out <- inject(run_versions(
     expr = !!expr,
     pkgs = pkgs,
     libpath = libpath,
     args_pak = args_pak,
     args_callr = args_callr
-  )
+  ))
 
   pkg <- out[["pkg"]]
   bench_marks <- out[["result"]]
@@ -146,16 +147,17 @@ bench_branches <- function(
 
   check_dots_empty0(...)
 
-  expr <- enexpr(expr)
+  # Not `enexpr()` as that splices eagerly (#6)
+  expr <- substitute(expr)
 
-  out <- run_branches(
+  out <- inject(run_branches(
     expr = !!expr,
     current = current,
     branches = branches,
     libpath = libpath,
     args_pak = args_pak,
     args_callr = args_callr
-  )
+  ))
 
   branch <- out[["branch"]]
   bench_marks <- out[["result"]]
