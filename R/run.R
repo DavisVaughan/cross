@@ -114,7 +114,8 @@ run_versions <- function(
 
   check_dots_empty0(...)
 
-  expr <- enexpr(expr)
+  # Not `enexpr()` as that splices eagerly (#6)
+  expr <- substitute(expr)
 
   pkgs <- normalize_pkgs(pkgs)
   pkg <- pkgs[["pkg"]]
@@ -367,7 +368,8 @@ run_branches <- function(
 
   check_dots_empty0(...)
 
-  expr <- enexpr(expr)
+  # Not `enexpr()` as that splices eagerly (#6)
+  expr <- substitute(expr)
 
   check_bool(current)
   check_character(branches)
