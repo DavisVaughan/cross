@@ -113,7 +113,7 @@ Defaults to \code{TRUE} if not set.
 # 2 local branches.
 # To run this:
 # - The working directory is set to the RStudio project for vctrs
-# - There can't be any uncommitted git changes
+# - There ideally are not uncommitted git changes
 # - You are currently on a branch, say `fix/performance-bug`
 # - You'd like to run that branch against `main`
 bench_branches({
