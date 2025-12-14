@@ -77,7 +77,7 @@ cross::bench_versions(pkgs = pkgs, {
 branches. It assumes that:
 
 - `usethis::proj_get()` points to an R package using git.
-- There are no uncommitted git changes.
+- There ideally are no uncommitted git changes.
 
 If those are true, then it will automatically run the expression against
 the current branch and the `main` branch, but you can change this with

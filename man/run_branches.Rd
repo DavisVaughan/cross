@@ -40,14 +40,11 @@ of the package you want to install different branches of. This is typically
 the case whenever you open an RStudio project for the package in question.
 Technically, the path is determined by \code{\link[usethis:proj_utils]{usethis::proj_get()}}.
 
-Your git tree must be completely clean to use \code{branches}. If there are any
-uncommitted changes, an error will be thrown because \code{run_branches()} must
-swap between the branches to install the package, potentially resulting in
-a loss of information. Note that untracked files are not included in this
-check - they should never be lost when the branch is changed, but they
-could affect the results.
-
-After the last branch is installed, the original branch is checked out.}
+Each branch will be duplicated into a temporary branch and checked out into
+its own temporary git worktree. This allows the main folder you are working
+in to remain unmodified. Note that any uncommitted changes in the git tree
+will not be included when the \code{current} branch is checked out into its
+worktree.}
 
 \item{libpath}{\verb{[character]}
 
@@ -119,7 +116,7 @@ Defaults to \code{TRUE} if not set.
 # 2 local branches.
 # To run this:
 # - The working directory is set to the RStudio project for vctrs
-# - There can't be any uncommitted git changes
+# - There ideally are not uncommitted git changes
 # - You are currently on a branch, say `fix/performance-bug`
 # - You'd like to run that branch against `main`
 run_branches({

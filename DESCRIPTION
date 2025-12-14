@@ -16,6 +16,7 @@ Imports:
     cli (>= 3.6.1),
     gert (>= 1.9.2),
     pak (>= 0.5.1),
+    processx (>= 3.8.6),
     purrr (>= 1.0.4),
     rlang (>= 1.1.1),
     rprojroot (>= 2.0.3),
