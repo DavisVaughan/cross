@@ -101,13 +101,11 @@ fresh R session and must be self-contained.</p>
 of the package you want to install different branches of. This is typically
 the case whenever you open an RStudio project for the package in question.
 Technically, the path is determined by <code><a href="https://usethis.r-lib.org/reference/proj_utils.html" class="external-link">usethis::proj_get()</a></code>.</p>
-<p>Your git tree must be completely clean to use <code>branches</code>. If there are any
-uncommitted changes, an error will be thrown because <code><a href="run_branches.html">run_branches()</a></code> must
-swap between the branches to install the package, potentially resulting in
-a loss of information. Note that untracked files are not included in this
-check - they should never be lost when the branch is changed, but they
-could affect the results.</p>
-<p>After the last branch is installed, the original branch is checked out.</p></dd>
+<p>Each branch will be duplicated into a temporary branch and checked out into
+its own temporary git worktree. This allows the main folder you are working
+in to remain unmodified. Note that any uncommitted changes in the git tree
+will not be included when the <code>current</code> branch is checked out into its
+worktree.</p></dd>
 
 
 <dt id="arg-libpath">libpath<a class="anchor" aria-label="anchor" href="#arg-libpath"></a></dt>
@@ -164,7 +162,7 @@ shown when running interactively.</p></li>
 <span class="r-in"><span><span class="co"># 2 local branches.</span></span></span>
 <span class="r-in"><span><span class="co"># To run this:</span></span></span>
 <span class="r-in"><span><span class="co"># - The working directory is set to the RStudio project for vctrs</span></span></span>
-<span class="r-in"><span><span class="co"># - There can't be any uncommitted git changes</span></span></span>
+<span class="r-in"><span><span class="co"># - There ideally are not uncommitted git changes</span></span></span>
 <span class="r-in"><span><span class="co"># - You are currently on a branch, say `fix/performance-bug`</span></span></span>
 <span class="r-in"><span><span class="co"># - You'd like to run that branch against `main`</span></span></span>
 <span class="r-in"><span><span class="fu">bench_branches</span><span class="op">(</span><span class="op">{</span></span></span>
@@ -187,7 +185,7 @@ shown when running interactively.</p></li>
 </div>
 
 <div class="pkgdown">
-  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.1.3.</p>
+  <p></p><p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
       </footer></div>
