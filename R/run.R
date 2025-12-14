@@ -326,14 +326,11 @@ list_transpose <- function(
 #'   the case whenever you open an RStudio project for the package in question.
 #'   Technically, the path is determined by [usethis::proj_get()].
 #'
-#'   Your git tree must be completely clean to use `branches`. If there are any
-#'   uncommitted changes, an error will be thrown because `run_branches()` must
-#'   swap between the branches to install the package, potentially resulting in
-#'   a loss of information. Note that untracked files are not included in this
-#'   check - they should never be lost when the branch is changed, but they
-#'   could affect the results.
-#'
-#'   After the last branch is installed, the original branch is checked out.
+#'   Each branch will be duplicated into a temporary branch and checked out into
+#'   its own temporary git worktree. This allows the main folder you are working
+#'   in to remain unmodified. Note that any uncommitted changes in the git tree
+#'   will not be included when the `current` branch is checked out into its
+#'   worktree.
 #'
 #' @returns
 #' A data frame with two columns:
@@ -397,18 +394,24 @@ run_branches <- function(
     cli::cli_abort(message)
   }
 
-  if (git_has_changes(path)) {
-    message <- c(
-      "Can't use {.fn run_branches} when there are uncommited changes between the working directory and the git index.",
-      i = "Commit your changes first!"
-    )
-    cli::cli_abort(message)
-  }
-
   original <- gert::git_branch(path)
 
   if (current) {
     branches <- c(original, branches)
+  }
+
+  if (original %in% branches && git_has_changes(path)) {
+    message <- paste(
+      sep = "\n",
+      "There are uncommited changes in the current branch.",
+      "Running against this branch will not include these changes.",
+      "Continue?"
+    )
+    rlang::inform(message)
+    response <- utils::menu(c("Yes", "No"))
+    if (response != 1L) {
+      return(invisible())
+    }
   }
 
   n <- length(branches)
@@ -417,8 +420,6 @@ run_branches <- function(
   install_branches(
     branches = branches,
     libs = libs,
-    original = original,
-    path = path,
     args_pak = args_pak
   )
 
@@ -438,24 +439,49 @@ run_branches <- function(
   out
 }
 
-install_branches <- function(branches, libs, original, path, args_pak) {
-  withr::defer(gert::git_branch_checkout(original, repo = path))
-
+install_branches <- function(branches, libs, args_pak) {
   for (i in seq_along(branches)) {
-    branch <- branches[[i]]
-
-    gert::git_branch_checkout(branch, repo = path)
-
-    args_pak[["pkg"]] <- paste0("local::", path)
-    args_pak[["lib"]] <- libs[[i]]
-    args_pak[["ask"]] <- FALSE
-
-    ui_done("Installing branch {usethis::ui_value(branch)}")
-
-    pak_suppress({
-      inject(pak::pkg_install(!!!args_pak))
-    })
+    install_branch(
+      branch = branches[[i]],
+      lib = libs[[i]],
+      args_pak = args_pak
+    )
   }
+}
+
+install_branch <- function(branch, lib, args_pak) {
+  dir_worktree <- withr::local_tempdir()
+  branch_worktree <- paste0(branch, "-cross")
+
+  # Create a temporary branch specific to this temporary worktree
+  # (You can't checkout a branch twice, i.e. if the user is already
+  # on `main`, we can't check it out again into the temporary worktree,
+  # so we need a fresh branch)
+  gert::git_branch_create(
+    branch = branch_worktree,
+    ref = branch,
+    checkout = FALSE,
+    force = FALSE
+  )
+  withr::defer(gert::git_branch_delete(branch_worktree))
+
+  # Create a temporary worktree for this new branch,
+  # this is where we install from
+  git_worktree_add(
+    dir = dir_worktree,
+    branch = branch_worktree
+  )
+  withr::defer(git_worktree_remove(dir = dir_worktree))
+
+  args_pak[["pkg"]] <- paste0("local::", dir_worktree)
+  args_pak[["lib"]] <- lib
+  args_pak[["ask"]] <- FALSE
+
+  ui_done("Installing branch {usethis::ui_value(branch)}")
+
+  pak_suppress({
+    inject(pak::pkg_install(!!!args_pak))
+  })
 }
 
 is_package <- function(path) {
