@@ -410,7 +410,7 @@ run_branches <- function(
     rlang::inform(message)
     response <- utils::menu(c("Yes", "No"))
     if (response != 1L) {
-      return(invisible())
+      cli::cli_abort("Cancelling due to uncommitted changes.")
     }
   }
 
