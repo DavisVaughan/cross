@@ -410,7 +410,7 @@ run_branches <- function(
     rlang::inform(message)
     response <- utils::menu(c("Yes", "No"))
     if (response != 1L) {
-      return(invisible())
+      cli::cli_abort("Cancelling due to uncommitted changes.")
     }
   }
 
@@ -450,30 +450,31 @@ install_branches <- function(branches, libs, args_pak) {
 }
 
 install_branch <- function(branch, lib, args_pak) {
-  dir_worktree <- withr::local_tempdir()
-  branch_worktree <- paste0(branch, "-cross")
+  name <- paste0(branch, "-cross")
+  path <- file.path(withr::local_tempdir(), name)
 
   # Create a temporary branch specific to this temporary worktree
   # (You can't checkout a branch twice, i.e. if the user is already
   # on `main`, we can't check it out again into the temporary worktree,
   # so we need a fresh branch)
   gert::git_branch_create(
-    branch = branch_worktree,
+    branch = name,
     ref = branch,
     checkout = FALSE,
     force = FALSE
   )
-  withr::defer(gert::git_branch_delete(branch_worktree))
+  withr::defer(gert::git_branch_delete(name))
 
   # Create a temporary worktree for this new branch,
   # this is where we install from
-  git_worktree_add(
-    dir = dir_worktree,
-    branch = branch_worktree
+  gert::git_worktree_add(
+    name = name,
+    path = path,
+    branch = name
   )
-  withr::defer(git_worktree_remove(dir = dir_worktree))
+  withr::defer(gert::git_worktree_remove(name))
 
-  args_pak[["pkg"]] <- paste0("local::", dir_worktree)
+  args_pak[["pkg"]] <- paste0("local::", path)
   args_pak[["lib"]] <- lib
   args_pak[["ask"]] <- FALSE
 

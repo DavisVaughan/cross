@@ -14,9 +14,8 @@ Depends:
 Imports:
     callr (>= 3.7.3),
     cli (>= 3.6.1),
-    gert (>= 1.9.2),
+    gert (>= 2.3.1),
     pak (>= 0.5.1),
-    processx (>= 3.8.6),
     purrr (>= 1.0.4),
     rlang (>= 1.1.1),
     rprojroot (>= 2.0.3),
