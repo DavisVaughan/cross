@@ -450,7 +450,7 @@ install_branches <- function(branches, libs, args_pak) {
 }
 
 install_branch <- function(branch, lib, args_pak) {
-  name <- paste0(branch, "-cross")
+  name <- paste0(branch_sanitize(branch), "-cross")
   path <- file.path(withr::local_tempdir(), name)
 
   # Create a temporary branch specific to this temporary worktree
@@ -483,6 +483,15 @@ install_branch <- function(branch, lib, args_pak) {
   pak_suppress({
     inject(pak::pkg_install(!!!args_pak))
   })
+}
+
+# Replaces all `/` and `\\` with `-` for use as a folder name. Required for the
+# `path` the worktree is checked out into, and for the `.git/worktree/{name}`
+# folder that git creates.
+branch_sanitize <- function(branch) {
+  branch <- gsub("/", "-", branch, fixed = TRUE)
+  branch <- gsub("\\", "-", branch, fixed = TRUE)
+  branch
 }
 
 is_package <- function(path) {
